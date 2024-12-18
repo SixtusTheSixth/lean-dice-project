@@ -1,0 +1,20 @@
+## Dice: CS 1951X Final Project Fall 2024
+#### Anand Advani
+
+Note: Everything is in the `FinalProj/Basic.lean` file.
+
+The original goal of this project was to prove the results of one or two dice-related probability problems from [this set](https://www.madandmoonly.com/doctormatt/mathematics/dice1.pdf). I ended up learning about Mathlib's probability, sum, and Finset components, proved a couple basic things about dice probabilities, and set up a proof of the first problem in that document. I encountered a lot of difficulties, as Mathlib doesn't have a probabilistic notion of expectation or of infinite sums, and it was tricky to select the proper types to use for various objects.
+
+My first goal was to set up the sample space for one roll of the dice -- that is, the set $\{1, 2, 3, 4, 5, 6\}$, and to prove that under a uniform distribution on that space, **the probability of $\{1\}$ is $1/6$**.
+
+I was stuck for a long time at this step, fiddling with `decide` and `Set` versus `Finset` versus `Fintype`, because Lean wants to know that a set is finite in order for it to be decidable whether an element is a part of the set, but set membership also wasn't working with finsets - in the end, it the best definition was `DiceSpace : Finset := {1, 2, 3, 4, 5, 6}`. With this definition, I could prove that $1 \in \{1, 2, 3, 4, 5, 6\}$ and $\#\{1, 2, 3, 4, 5, 6\} = 6$ (`one_in_space` and `DiceSpace_size`, respectively).
+
+I next needed to define a probability measure on the space. This was another headache, because the probability section of Mathlib defines the pdf of a uniform distribution, but this is not set up with the simplifier. It was easier to directly define the uniform distribution as the counting measure on the `DiceSpace` set. I used this counting measure to prove that the probability of a single element in a set $S$ under the uniform distribution is $1/\#S$ as `uniformOn_elem` (at the top of the file). This allowed me to prove that the probability of $\{1\}$ is $1/6$.
+
+I next proved that **the expectation of one roll of a die is 3.5**. However, there is no expected value defined in Mathlib's probability section, and I believe defining it would require much more effort and some background math about convex functions than I could do in this project. However, Mathlib does define expectation over finsets as the sum of a function applied to each element of the finset. Switching to this setup allowed me to complete the proof relatively easily.
+
+I finally then transitioned to proving the first problem from the set of dice problems above, namely that if you roll a die multiple times in a row, **the expected value of the first time you will roll a 6 is on the 6th roll**. The idea of proving this is to define the random variable $X$ to equal the event that the first 6 occurs on the $X$th roll. Then $$\mathbb{P}(X = n) = \Big(\frac{5}{6}\Big)^{n-1} * \Big(\frac{1}{6}\Big),$$ because there is a 5/6 probability of not rolling a 6 on the first $n-1$ rolls, and a 1/6 probability of rolling a 6 on the $n$th roll. You can then take the expectation $$\mathbb{E}[X] = \sum_{n=1}^\infty n \cdot \Big( \frac{5}{6} \Big)^{n-1} \cdot \Big( \frac{1}{6} \Big), $$ and use the proof that $$\sum_{n=1}^\infty n \cdot r^n = \frac{r}{(1 - r)^2}$$ to obtain the answer.
+
+To prove this, I set up the space of the possible numbers of rolls to be $\{1, 2, 3, ...\}$, or the positive natural numbers (first I defined this myself, and then realized it was built into mathlib). I did need to define an instance of raising a rational number to the power of a positive natural, which was not in mathlib.
+
+The main problem is that working with infinite sums is very difficult in Lean. I would have to do many proofs about the convergence of the sum to even show that I could pull out a constant, so I've sorry'd a couple statements which are manipulations of infinite sums. Besides those, the proof sketch above worked correctly, and the `ring` tactic finished off the arithmetic.
